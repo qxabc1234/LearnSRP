@@ -1,0 +1,7 @@
+﻿.vs
+Library
+Temp
+*.csproj
+obj/Debug
+Logs
+LearnSRP.sln
