@@ -1,11 +1,19 @@
 using System;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 
 public partial class CameraRenderer
 {
+
+    partial void DrawGizmos();
+    partial void DrawUnsupportedShaders();
+    partial void PrepareForSceneWindow();
+    partial void PrepareBuffer();
+
+
 #if UNITY_EDITOR
-    static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
     static Material errorMaterial;
 
 
@@ -18,8 +26,27 @@ public partial class CameraRenderer
         new ShaderTagId("VertexLM")
     };
 
+    string SampleName { get; set; }
 
-    void DrawUnsupportedShaders()
+
+    partial void PrepareForSceneWindow()
+    {
+        if (camera.cameraType == CameraType.SceneView)
+        {
+            ScriptableRenderContext.EmitWorldGeometryForSceneView(camera);
+        }
+    }
+
+    partial void DrawGizmos()
+    {
+        if (Handles.ShouldRenderGizmos())
+        {
+            context.DrawGizmos(camera, GizmoSubset.PreImageEffects);
+            context.DrawGizmos(camera, GizmoSubset.PostImageEffects);
+        }
+    }
+
+    partial void DrawUnsupportedShaders()
     {
         if (errorMaterial == null)
         {
@@ -41,5 +68,15 @@ public partial class CameraRenderer
             cullingResults, ref drawingSettings, ref filteringSettings
         );
     }
+    partial void PrepareBuffer()
+    {
+        Profiler.BeginSample("Editor Only");
+        buffer.name = SampleName = camera.name;
+        Profiler.EndSample();
+    }
+#else
+
+	const string SampleName = bufferName;
+
 #endif
 }
