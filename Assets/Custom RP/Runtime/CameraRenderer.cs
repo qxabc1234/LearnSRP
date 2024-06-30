@@ -7,11 +7,15 @@ public partial class CameraRenderer
 {
 
     ScriptableRenderContext context;
+    Lighting lighting = new Lighting();
+
 
     Camera camera;
     CullingResults cullingResults;
 
-    static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+    static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit"),
+        litShaderTagId = new ShaderTagId("CustomLit");
+
 
 
     const string bufferName = "Render Camera";
@@ -27,7 +31,8 @@ public partial class CameraRenderer
         buffer.Clear();
     }
 
-    public void Render(ScriptableRenderContext context, Camera camera)
+    public void Render(ScriptableRenderContext context, Camera camera,
+        bool useDynamicBatching, bool useGPUInstancing)
     {
         this.context = context;
         this.camera = camera;
@@ -40,7 +45,8 @@ public partial class CameraRenderer
             return;
         }
         Setup();
-        DrawVisibleGeometry();
+        lighting.Setup(context, cullingResults);
+        DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawGizmos();
         Submit();
     }
@@ -58,7 +64,7 @@ public partial class CameraRenderer
         buffer.BeginSample(SampleName);
         ExecuteBuffer();
     }
-    void DrawVisibleGeometry()
+    void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
     {
         var sortingSettings = new SortingSettings(camera)
         {
@@ -66,7 +72,13 @@ public partial class CameraRenderer
         };
         var drawingSettings = new DrawingSettings(
             unlitShaderTagId, sortingSettings
-        );
+        )
+        {
+            enableDynamicBatching = useDynamicBatching,
+            enableInstancing = useGPUInstancing
+        };
+        drawingSettings.SetShaderPassName(1, litShaderTagId);
+
         var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
 
 
