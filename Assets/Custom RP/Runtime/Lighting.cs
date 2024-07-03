@@ -1,80 +1,74 @@
-using Unity.Collections;
+﻿using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class Lighting
-{
-    const int maxDirLightCount = 4;
+public class Lighting {
 
-    static int
-        //dirLightColorId = Shader.PropertyToID("_DirectionalLightColor"),
-        //dirLightDirectionId = Shader.PropertyToID("_DirectionalLightDirection");
-        dirLightCountId = Shader.PropertyToID("_DirectionalLightCount"),
-        dirLightColorsId = Shader.PropertyToID("_DirectionalLightColors"),
-        dirLightDirectionsId = Shader.PropertyToID("_DirectionalLightDirections"),
-        dirLightShadowDataId =
+	const string bufferName = "Lighting";
+
+	const int maxDirLightCount = 4;
+
+	static int
+		dirLightCountId = Shader.PropertyToID("_DirectionalLightCount"),
+		dirLightColorsId = Shader.PropertyToID("_DirectionalLightColors"),
+		dirLightDirectionsId = Shader.PropertyToID("_DirectionalLightDirections"),
+		dirLightShadowDataId =
 			Shader.PropertyToID("_DirectionalLightShadowData");
 
-    static Vector4[]
-        dirLightColors = new Vector4[maxDirLightCount],
-        dirLightDirections = new Vector4[maxDirLightCount],
-        dirLightShadowData = new Vector4[maxDirLightCount];
-    const string bufferName = "Lighting";
-    CullingResults cullingResults;
+	static Vector4[]
+		dirLightColors = new Vector4[maxDirLightCount],
+		dirLightDirections = new Vector4[maxDirLightCount],
+		dirLightShadowData = new Vector4[maxDirLightCount];
 
-    Shadows shadows = new Shadows();
+	CommandBuffer buffer = new CommandBuffer {
+		name = bufferName
+	};
 
-    CommandBuffer buffer = new CommandBuffer
-    {
-        name = bufferName
-    };
+	CullingResults cullingResults;
 
-    public void Setup(ScriptableRenderContext context, CullingResults cullingResults, ShadowSettings shadowSettings
-    )
-    {
-        this.cullingResults = cullingResults;
-        buffer.BeginSample(bufferName);
-        shadows.Setup(context, cullingResults, shadowSettings);
-        SetupLights();
-        shadows.Render();
-        buffer.EndSample(bufferName);
-        context.ExecuteCommandBuffer(buffer);
-        buffer.Clear();
-    }
+	Shadows shadows = new Shadows();
 
-    void SetupLights() {
-        int dirLightCount = 0;
-        NativeArray<VisibleLight> visibleLights = cullingResults.visibleLights;
-        for (int i = 0; i < visibleLights.Length; i++)
-        {
-            VisibleLight visibleLight = visibleLights[i];
-            if (visibleLight.lightType == LightType.Directional)
-            {
-                SetupDirectionalLight(dirLightCount++, ref visibleLight);
-                if (dirLightCount >= maxDirLightCount)
-                {
-                    break;
-                }
-            }
-        }
+	public void Setup (
+		ScriptableRenderContext context, CullingResults cullingResults,
+		ShadowSettings shadowSettings
+	) {
+		this.cullingResults = cullingResults;
+		buffer.BeginSample(bufferName);
+		shadows.Setup(context, cullingResults, shadowSettings);
+		SetupLights();
+		shadows.Render();
+		buffer.EndSample(bufferName);
+		context.ExecuteCommandBuffer(buffer);
+		buffer.Clear();
+	}
 
-        buffer.SetGlobalInt(dirLightCountId, visibleLights.Length);
-        buffer.SetGlobalVectorArray(dirLightColorsId, dirLightColors);
-        buffer.SetGlobalVectorArray(dirLightDirectionsId, dirLightDirections);
-        buffer.SetGlobalVectorArray(dirLightShadowDataId, dirLightShadowData);
+	public void Cleanup () {
+		shadows.Cleanup();
+	}
 
-    }
+	void SetupLights () {
+		NativeArray<VisibleLight> visibleLights = cullingResults.visibleLights;
+		int dirLightCount = 0;
+		for (int i = 0; i < visibleLights.Length; i++) {
+			VisibleLight visibleLight = visibleLights[i];
+			if (visibleLight.lightType == LightType.Directional) {
+				SetupDirectionalLight(dirLightCount++, ref visibleLight);
+				if (dirLightCount >= maxDirLightCount) {
+					break;
+				}
+			}
+		}
 
-    void SetupDirectionalLight(int index, ref VisibleLight visibleLight)
-    {
-        dirLightColors[index] = visibleLight.finalColor;
-        dirLightDirections[index] = -visibleLight.localToWorldMatrix.GetColumn(2);
-        dirLightShadowData[index] =
-            shadows.ReserveDirectionalShadows(visibleLight.light, index);
+		buffer.SetGlobalInt(dirLightCountId, dirLightCount);
+		buffer.SetGlobalVectorArray(dirLightColorsId, dirLightColors);
+		buffer.SetGlobalVectorArray(dirLightDirectionsId, dirLightDirections);
+		buffer.SetGlobalVectorArray(dirLightShadowDataId, dirLightShadowData);
+	}
 
-    }
-    public void Cleanup()
-    {
-        shadows.Cleanup();
-    }
+	void SetupDirectionalLight (int index, ref VisibleLight visibleLight) {
+		dirLightColors[index] = visibleLight.finalColor;
+		dirLightDirections[index] = -visibleLight.localToWorldMatrix.GetColumn(2);
+		dirLightShadowData[index] =
+			shadows.ReserveDirectionalShadows(visibleLight.light, index);
+	}
 }
