@@ -13,37 +13,36 @@ struct Varyings {
 	UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-Varyings ShadowCasterPassVertex (Attributes input) {
+Varyings ShadowCasterPassVertex(Attributes input) {
 	Varyings output;
 	UNITY_SETUP_INSTANCE_ID(input);
 	UNITY_TRANSFER_INSTANCE_ID(input, output);
 	float3 positionWS = TransformObjectToWorld(input.positionOS);
 	output.positionCS = TransformWorldToHClip(positionWS);
 
-	#if UNITY_REVERSED_Z
-		output.positionCS.z =
-			min(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
-	#else
-		output.positionCS.z =
-			max(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
-	#endif
+#if UNITY_REVERSED_Z
+	output.positionCS.z =
+		min(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
+#else
+	output.positionCS.z =
+		max(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
+#endif
 
 	output.baseUV = TransformBaseUV(input.baseUV);
 	return output;
 }
 
-void ShadowCasterPassFragment (Varyings input) {
+void ShadowCasterPassFragment(Varyings input) {
 	UNITY_SETUP_INSTANCE_ID(input);
-	float4 base = GetBase(input.baseUV);
-	#if defined(_CLIPPING)
-		clip(base.a - GetCutoff(input.baseUV));
-	#endif
-	#if defined(_SHADOWS_CLIP)
-		clip(base.a - UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff));
-	#elif defined(_SHADOWS_DITHER)
-		float dither = InterleavedGradientNoise(input.positionCS.xy, 0);
-		clip(base.a - dither);
-	#endif
+
+	InputConfig config = GetInputConfig(input.baseUV);
+	float4 base = GetBase(config);
+#if defined(_SHADOWS_CLIP)
+	clip(base.a - GetCutoff(config));
+#elif defined(_SHADOWS_DITHER)
+	float dither = InterleavedGradientNoise(input.positionCS.xy, 0);
+	clip(base.a - dither);
+#endif
 }
 
 #endif

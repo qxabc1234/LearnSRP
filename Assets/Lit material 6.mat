@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Lit material
+  m_Name: Lit material 6
   m_Shader: {fileID: 4800000, guid: a2dd9645f9d3b104eb69be3a0ba5723e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -40,17 +40,17 @@ Material:
     m_Ints: []
     m_Floats:
     - _Clipping: 0
-    - _Cutoff: 0.5
-    - _DstBlend: 0
-    - _Metallic: 0.475
+    - _Cutoff: 0
+    - _DstBlend: 10
+    - _Metallic: 0.296
     - _PremulAlpha: 0
     - _ReceiveShadows: 1
     - _Shadows: 0
     - _Smoothness: 0.497
-    - _SrcBlend: 1
+    - _SrcBlend: 5
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.626382, g: 0.87169814, b: 0.45887506, a: 1}
+    - _BaseColor: {r: 0.94716984, g: 0.119736545, b: 0.119736545, a: 1}
     - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []

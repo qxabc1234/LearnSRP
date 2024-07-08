@@ -13,7 +13,7 @@ public class ShadowSettings {
 	}
 
 	[Min(0.001f)]
-	public float maxDistance = 100f;
+	public float maxDistance = 10f;
 
 	[Range(0.001f, 1f)]
 	public float distanceFade = 0.1f;
