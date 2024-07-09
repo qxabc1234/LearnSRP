@@ -111,12 +111,20 @@ public partial class CameraRenderer
             enableDynamicBatching = useDynamicBatching,
             enableInstancing = useGPUInstancing,
             perObjectData =
-                PerObjectData.ReflectionProbes |
                 PerObjectData.Lightmaps | PerObjectData.ShadowMask |
-                PerObjectData.LightProbe | PerObjectData.OcclusionProbe |
-                PerObjectData.LightProbeProxyVolume |
-                PerObjectData.OcclusionProbeProxyVolume |
-                lightsPerObjectFlags
+            PerObjectData.LightProbe | PerObjectData.OcclusionProbe |
+            PerObjectData.LightProbeProxyVolume |
+            PerObjectData.OcclusionProbeProxyVolume |
+            lightsPerObjectFlags
+
+            /*
+             * 				PerObjectData.ReflectionProbes |
+            PerObjectData.Lightmaps | PerObjectData.ShadowMask |
+            PerObjectData.LightProbe | PerObjectData.OcclusionProbe |
+            PerObjectData.LightProbeProxyVolume |
+            PerObjectData.OcclusionProbeProxyVolume |
+            lightsPerObjectFlags
+             */
         };
         drawingSettings.SetShaderPassName(1, litShaderTagId);
 
