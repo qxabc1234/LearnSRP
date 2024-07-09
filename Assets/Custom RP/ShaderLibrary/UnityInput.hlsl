@@ -6,12 +6,17 @@ float4x4 unity_ObjectToWorld;
 float4x4 unity_WorldToObject;
 float4 unity_LODFade;
 real4 unity_WorldTransformParams;
-float4 unity_ProbesOcclusion;
-float4 unity_LightmapST;
-//float4 unity_Builtins2Array[unity_InstanceID].unity_LightmapSTArray
- 
 
+real4 unity_LightData;
+real4 unity_LightIndices[2];
+
+float4 unity_ProbesOcclusion;
+
+float4 unity_SpecCube0_HDR;
+
+float4 unity_LightmapST;
 float4 unity_DynamicLightmapST;
+
 float4 unity_SHAr;
 float4 unity_SHAg;
 float4 unity_SHAb;
@@ -34,6 +39,5 @@ float4x4 unity_prev_MatrixIM;
 float4x4 glstate_matrix_projection;
 
 float3 _WorldSpaceCameraPos;
-
 
 #endif
