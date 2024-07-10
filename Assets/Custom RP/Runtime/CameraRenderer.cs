@@ -6,12 +6,11 @@ public partial class CameraRenderer
 
     const string bufferName = "Render Camera";
 
-    static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
-
-
     static ShaderTagId
         unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit"),
         litShaderTagId = new ShaderTagId("CustomLit");
+
+    static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
 
     CommandBuffer buffer = new CommandBuffer
     {
@@ -28,12 +27,13 @@ public partial class CameraRenderer
 
     PostFXStack postFXStack = new PostFXStack();
 
-
+    bool useHDR;
 
     public void Render(
-        ScriptableRenderContext context, Camera camera,
+        ScriptableRenderContext context, Camera camera, bool allowHDR,
         bool useDynamicBatching, bool useGPUInstancing, bool useLightsPerObject,
-        ShadowSettings shadowSettings, PostFXSettings postFXSettings
+        ShadowSettings shadowSettings, PostFXSettings postFXSettings,
+        int colorLUTResolution
     )
     {
         this.context = context;
@@ -45,13 +45,14 @@ public partial class CameraRenderer
         {
             return;
         }
+        useHDR = allowHDR && camera.allowHDR;
 
         buffer.BeginSample(SampleName);
         ExecuteBuffer();
         lighting.Setup(
             context, cullingResults, shadowSettings, useLightsPerObject
         );
-        postFXStack.Setup(context, camera, postFXSettings);
+        postFXStack.Setup(context, camera, postFXSettings, useHDR, colorLUTResolution);
         buffer.EndSample(SampleName);
         Setup();
         DrawVisibleGeometry(
@@ -64,7 +65,6 @@ public partial class CameraRenderer
             postFXStack.Render(frameBufferId);
         }
         DrawGizmosAfterFX();
-
         Cleanup();
         Submit();
     }
@@ -84,6 +84,7 @@ public partial class CameraRenderer
     {
         context.SetupCameraProperties(camera);
         CameraClearFlags flags = camera.clearFlags;
+
         if (postFXStack.IsActive)
         {
             if (flags > CameraClearFlags.Color)
@@ -92,7 +93,8 @@ public partial class CameraRenderer
             }
             buffer.GetTemporaryRT(
                 frameBufferId, camera.pixelWidth, camera.pixelHeight,
-                32, FilterMode.Bilinear, RenderTextureFormat.Default
+                32, FilterMode.Bilinear, useHDR ?
+                    RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default
             );
             buffer.SetRenderTarget(
                 frameBufferId,
@@ -110,6 +112,15 @@ public partial class CameraRenderer
         ExecuteBuffer();
     }
 
+    void Cleanup()
+    {
+        lighting.Cleanup();
+        if (postFXStack.IsActive)
+        {
+            buffer.ReleaseTemporaryRT(frameBufferId);
+        }
+    }
+
     void Submit()
     {
         buffer.EndSample(SampleName);
@@ -121,15 +132,6 @@ public partial class CameraRenderer
     {
         context.ExecuteCommandBuffer(buffer);
         buffer.Clear();
-    }
-
-    void Cleanup()
-    {
-        lighting.Cleanup();
-        if (postFXStack.IsActive)
-        {
-            buffer.ReleaseTemporaryRT(frameBufferId);
-        }
     }
 
     void DrawVisibleGeometry(
@@ -150,20 +152,12 @@ public partial class CameraRenderer
             enableDynamicBatching = useDynamicBatching,
             enableInstancing = useGPUInstancing,
             perObjectData =
+             //   PerObjectData.ReflectionProbes |
                 PerObjectData.Lightmaps | PerObjectData.ShadowMask |
-            PerObjectData.LightProbe | PerObjectData.OcclusionProbe |
-            PerObjectData.LightProbeProxyVolume |
-            PerObjectData.OcclusionProbeProxyVolume |
-            lightsPerObjectFlags
-
-            /*
-             * 				PerObjectData.ReflectionProbes |
-            PerObjectData.Lightmaps | PerObjectData.ShadowMask |
-            PerObjectData.LightProbe | PerObjectData.OcclusionProbe |
-            PerObjectData.LightProbeProxyVolume |
-            PerObjectData.OcclusionProbeProxyVolume |
-            lightsPerObjectFlags
-             */
+                PerObjectData.LightProbe | PerObjectData.OcclusionProbe |
+                PerObjectData.LightProbeProxyVolume |
+                PerObjectData.OcclusionProbeProxyVolume |
+                lightsPerObjectFlags
         };
         drawingSettings.SetShaderPassName(1, litShaderTagId);
 
