@@ -1,3 +1,4 @@
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -26,11 +27,16 @@ public class CustomRenderPipelineAsset : RenderPipelineAsset
     [SerializeField]
     ColorLUTResolution colorLUTResolution = ColorLUTResolution._32;
 
+    [Range(0.1f, 2f)]
+    public float renderScale = 1f;
+
     protected override RenderPipeline CreatePipeline()
     {
         return new CustomRenderPipeline(
             allowHDR, useDynamicBatching, useGPUInstancing, useSRPBatcher,
-            useLightsPerObject, shadows, postFXSettings, (int)colorLUTResolution
+            useLightsPerObject, shadows, postFXSettings, (int)colorLUTResolution,
+        renderScale
         );
+
     }
 }

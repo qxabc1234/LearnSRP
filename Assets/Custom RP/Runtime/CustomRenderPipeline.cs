@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.UIElements;
 
 public partial class CustomRenderPipeline : RenderPipeline
 {
@@ -17,12 +18,15 @@ public partial class CustomRenderPipeline : RenderPipeline
 
     int colorLUTResolution;
 
+    float renderScale;
+
     public CustomRenderPipeline(
         bool allowHDR,
         bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher,
         bool useLightsPerObject, ShadowSettings shadowSettings,
-        PostFXSettings postFXSettings, int colorLUTResolution
+        PostFXSettings postFXSettings, int colorLUTResolution, float renderScale
     )
+
     {
         this.colorLUTResolution = colorLUTResolution;
         this.allowHDR = allowHDR;
@@ -31,6 +35,7 @@ public partial class CustomRenderPipeline : RenderPipeline
         this.useDynamicBatching = useDynamicBatching;
         this.useGPUInstancing = useGPUInstancing;
         this.useLightsPerObject = useLightsPerObject;
+        this.renderScale = renderScale;
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
         GraphicsSettings.lightsUseLinearIntensity = true;
         InitializeForEditor();
@@ -47,7 +52,7 @@ public partial class CustomRenderPipeline : RenderPipeline
             renderer.Render(
                 context, cameras[i], allowHDR,
                 useDynamicBatching, useGPUInstancing, useLightsPerObject,
-                shadowSettings, postFXSettings, colorLUTResolution
+                shadowSettings, postFXSettings, colorLUTResolution, renderScale
             );
         }
     }

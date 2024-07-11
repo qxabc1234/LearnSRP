@@ -27,18 +27,22 @@ public partial class CameraRenderer
 
     PostFXStack postFXStack = new PostFXStack();
 
-    bool useHDR;
+    bool useHDR, useScaledRendering;
+    Vector2Int bufferSize;
+
 
     public void Render(
         ScriptableRenderContext context, Camera camera, bool allowHDR,
         bool useDynamicBatching, bool useGPUInstancing, bool useLightsPerObject,
         ShadowSettings shadowSettings, PostFXSettings postFXSettings,
-        int colorLUTResolution
+        int colorLUTResolution, float renderScale
     )
     {
         this.context = context;
         this.camera = camera;
 
+        float rScale = renderScale;
+        useScaledRendering = rScale < 0.99f || rScale > 1.01f;
         PrepareBuffer();
         PrepareForSceneWindow();
         if (!Cull(shadowSettings.maxDistance))
@@ -46,13 +50,23 @@ public partial class CameraRenderer
             return;
         }
         useHDR = allowHDR && camera.allowHDR;
+        if (useScaledRendering)
+        {
+            bufferSize.x = (int)(camera.pixelWidth * renderScale);
+            bufferSize.y = (int)(camera.pixelHeight * renderScale);
+        }
+        else
+        {
+            bufferSize.x = camera.pixelWidth;
+            bufferSize.y = camera.pixelHeight;
+        }
 
         buffer.BeginSample(SampleName);
         ExecuteBuffer();
         lighting.Setup(
             context, cullingResults, shadowSettings, useLightsPerObject
         );
-        postFXStack.Setup(context, camera, postFXSettings, useHDR, colorLUTResolution);
+        postFXStack.Setup(context, camera, bufferSize, postFXSettings, useHDR, colorLUTResolution);
         buffer.EndSample(SampleName);
         Setup();
         DrawVisibleGeometry(
@@ -92,7 +106,7 @@ public partial class CameraRenderer
                 flags = CameraClearFlags.Color;
             }
             buffer.GetTemporaryRT(
-                frameBufferId, camera.pixelWidth, camera.pixelHeight,
+                frameBufferId, bufferSize.x, bufferSize.y,
                 32, FilterMode.Bilinear, useHDR ?
                     RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default
             );

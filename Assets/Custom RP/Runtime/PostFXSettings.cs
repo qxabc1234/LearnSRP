@@ -35,6 +35,8 @@ public class PostFXSettings : ScriptableObject
 
         public Mode mode;
 
+        public bool ignoreRenderScale;
+
         [Range(0.05f, 0.95f)]
         public float scatter;
     }

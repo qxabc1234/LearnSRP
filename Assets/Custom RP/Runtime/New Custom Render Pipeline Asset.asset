@@ -34,3 +34,4 @@ MonoBehaviour:
       filter: 0
   postFXSettings: {fileID: 11400000, guid: 9a867379e0756cf4b8a81cd655792dc0, type: 2}
   colorLUTResolution: 32
+  renderScale: 1.046

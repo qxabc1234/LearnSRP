@@ -26,6 +26,8 @@ public partial class PostFXStack
 
     const int maxBloomPyramidLevels = 16;
 
+    Vector2Int bufferSize;
+
     int
         bloomBicubicUpsamplingId = Shader.PropertyToID("_BloomBicubicUpsampling"),
         bloomIntensityId = Shader.PropertyToID("_BloomIntensity"),
@@ -69,6 +71,8 @@ public partial class PostFXStack
 
     int colorLUTResolution;
 
+    static Rect fullViewRect = new Rect(0f, 0f, 1f, 1f);
+
     public bool IsActive => settings != null;
 
     public PostFXStack()
@@ -81,10 +85,11 @@ public partial class PostFXStack
     }
 
     public void Setup(
-        ScriptableRenderContext context, Camera camera, PostFXSettings settings,
+        ScriptableRenderContext context, Camera camera, Vector2Int bufferSize, PostFXSettings settings,
         bool useHDR, int colorLUTResolution
     )
     {
+        this.bufferSize = bufferSize;
         this.colorLUTResolution = colorLUTResolution;
         this.useHDR = useHDR;
         this.context = context;
@@ -112,7 +117,17 @@ public partial class PostFXStack
     bool DoBloom(int sourceId)
     {
         BloomSettings bloom = settings.Bloom;
-        int width = camera.pixelWidth / 2, height = camera.pixelHeight / 2;
+        int width, height;
+        if (bloom.ignoreRenderScale)
+        {
+            width = camera.pixelWidth / 2;
+            height = camera.pixelHeight / 2;
+        }
+        else
+        {
+            width = bufferSize.x / 2;
+            height = bufferSize.y / 2;
+        }
 
         if (
             bloom.maxIterations == 0 || bloom.intensity <= 0f ||
@@ -134,7 +149,7 @@ public partial class PostFXStack
         RenderTextureFormat format = useHDR ?
             RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default;
         buffer.GetTemporaryRT(
-            bloomPrefilterId, width, height, 0, FilterMode.Bilinear, format
+            bloomPrefilterId, bufferSize.x, bufferSize.y, 0, FilterMode.Bilinear, format
         );
         Draw(
             sourceId, bloomPrefilterId, bloom.fadeFireflies ?
@@ -293,7 +308,9 @@ public partial class PostFXStack
         buffer.SetGlobalVector(colorGradingLUTParametersId,
             new Vector4(1f / lutWidth, 1f / lutHeight, lutHeight - 1f)
         );
-        Draw(sourceId, BuiltinRenderTextureType.CameraTarget, Pass.Final);
+
+        DrawFinal(sourceId);
+
         buffer.ReleaseTemporaryRT(colorGradingLUTId);
     }
 
@@ -308,6 +325,22 @@ public partial class PostFXStack
         buffer.DrawProcedural(
             Matrix4x4.identity, settings.Material, (int)pass,
             MeshTopology.Triangles, 3
+        );
+    }
+
+    void DrawFinal(RenderTargetIdentifier from)
+    {
+        buffer.SetGlobalTexture(fxSourceId, from);
+        buffer.SetRenderTarget(
+            BuiltinRenderTextureType.CameraTarget,
+            camera.rect == fullViewRect ?
+                RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load,
+            RenderBufferStoreAction.Store
+        );
+        buffer.SetViewport(camera.pixelRect);
+        buffer.DrawProcedural(
+            Matrix4x4.identity, settings.Material,
+            (int)Pass.Final, MeshTopology.Triangles, 3
         );
     }
 }
